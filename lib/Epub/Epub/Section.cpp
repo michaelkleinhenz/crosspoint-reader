@@ -54,7 +54,9 @@ namespace {
 // v47: Word and character spacing in the header (cache validation); cached BlockStyle stores only character spacing.
 // v48: Hangul words wrap at spaces; with hyphenation on they may also split at a line end.
 //      Justification no longer stretches between syllables.
-constexpr uint8_t SECTION_FILE_VERSION = 48;
+// v49: extraParagraphSpacing changed from bool to uint8_t enum (multi-level spacing).
+// v50: Five-level paragraph spacing; first-line indent independent of spacing.
+constexpr uint8_t SECTION_FILE_VERSION = 50;
 // Written into the version field while a build is in progress; patched to
 // SECTION_FILE_VERSION only when the build is finalized. An abandoned /
 // crash-interrupted .bin therefore carries version 0, which loadSectionFile rejects
@@ -72,7 +74,7 @@ constexpr uint8_t SECTION_FILE_INCOMPLETE_VERSION = 0;
 // only fails (noisily, via the block-decode error path) when a page is loaded.
 // Derived so the pairing can't be forgotten: 0xFE for v28, 0xFD for v29, ...
 constexpr uint8_t SECTION_FILE_PARTIAL_VERSION = 0xFE - (SECTION_FILE_VERSION - 28);
-constexpr uint32_t HEADER_SIZE = sizeof(uint8_t) + sizeof(int) + sizeof(float) + sizeof(bool) + sizeof(uint8_t) +
+constexpr uint32_t HEADER_SIZE = sizeof(uint8_t) + sizeof(int) + sizeof(float) + sizeof(uint8_t) + sizeof(uint8_t) +
                                  sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(bool) + sizeof(bool) +
                                  sizeof(uint8_t) + sizeof(bool) + sizeof(uint32_t) + sizeof(uint32_t) +
                                  sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(int8_t) +
@@ -172,7 +174,7 @@ bool Section::loadSectionFile(const ReaderRenderSpec& spec) {
     int fileFontId;
     uint16_t fileViewportWidth, fileViewportHeight;
     float fileLineCompression;
-    bool fileExtraParagraphSpacing;
+    uint8_t fileExtraParagraphSpacing;
     uint8_t fileParagraphAlignment;
     bool fileHyphenationEnabled;
     bool fileEmbeddedStyle;

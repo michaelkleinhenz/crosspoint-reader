@@ -421,12 +421,12 @@ void ChapterHtmlSlimParser::startNewTextBlock(const BlockStyle& blockStyle) {
   // block is flushed so the chapter starts on a fresh page.
   flushPendingAnchor();
   currentTextBlock =
-      makeUniqueNoThrow<ParsedText>(extraParagraphSpacing, hyphenationEnabled, focusReadingEnabled, blockStyle);
+      makeUniqueNoThrow<ParsedText>(hyphenationEnabled, focusReadingEnabled, blockStyle);
   if (!currentTextBlock) {
     // Evict rebuildable caches and retry once before failing the build.
     freeink::MemoryManager::instance().ensureFree(4 * 1024);
     currentTextBlock =
-        makeUniqueNoThrow<ParsedText>(extraParagraphSpacing, hyphenationEnabled, focusReadingEnabled, blockStyle);
+        makeUniqueNoThrow<ParsedText>(hyphenationEnabled, focusReadingEnabled, blockStyle);
   }
   if (!currentTextBlock) {
     LOG_ERR("EHP", "OOM: ParsedText");
@@ -901,8 +901,7 @@ void XMLCALL ChapterHtmlSlimParser::startElement(void* userData, const XML_Char*
       tableCellBlockStyle.isRtl = cssStyle.direction == CssTextDirection::Rtl;
     }
 
-    self->currentTextBlock = makeUniqueNoThrow<ParsedText>(self->extraParagraphSpacing, self->hyphenationEnabled,
-                                                           self->focusReadingEnabled, tableCellBlockStyle);
+    self->currentTextBlock = makeUniqueNoThrow<ParsedText>(self->hyphenationEnabled, self->focusReadingEnabled, tableCellBlockStyle);
     if (!self->currentTextBlock) {
       LOG_ERR("EHP", "OOM: table cell");
       self->skipUntilDepth = self->depth;
@@ -1603,8 +1602,7 @@ void XMLCALL ChapterHtmlSlimParser::characterData(void* userData, const XML_Char
   if (!self->currentTextBlock) {
     const BlockStyle flowStyle =
         self->blockStyleStack.empty() ? BlockStyle() : self->blockStyleStack.back().withoutBottom();
-    self->currentTextBlock = makeUniqueNoThrow<ParsedText>(self->extraParagraphSpacing, self->hyphenationEnabled,
-                                                           self->focusReadingEnabled, flowStyle);
+    self->currentTextBlock = makeUniqueNoThrow<ParsedText>(self->hyphenationEnabled, self->focusReadingEnabled, flowStyle);
     if (!self->currentTextBlock) {
       LOG_ERR("EHP", "OOM: text block for character data");
       return;
@@ -1964,8 +1962,7 @@ void XMLCALL ChapterHtmlSlimParser::endElement(void* userData, const XML_Char* n
 
     const BlockStyle flowStyle =
         self->blockStyleStack.empty() ? BlockStyle() : self->blockStyleStack.back().withoutBottom();
-    self->currentTextBlock = makeUniqueNoThrow<ParsedText>(self->extraParagraphSpacing, self->hyphenationEnabled,
-                                                           self->focusReadingEnabled, flowStyle);
+    self->currentTextBlock = makeUniqueNoThrow<ParsedText>(self->hyphenationEnabled, self->focusReadingEnabled, flowStyle);
     if (!self->currentTextBlock) {
       LOG_ERR("EHP", "OOM: text block after table");
     }
@@ -2318,8 +2315,9 @@ void ChapterHtmlSlimParser::makePages() {
     currentPageNextY += blockStyle.paddingBottom;
   }
 
-  // Extra paragraph spacing if enabled (default behavior)
-  if (extraParagraphSpacing) {
-    currentPageNextY += lineHeight / 2;
+  if (extraParagraphSpacing > 0) {
+    static constexpr int EIGHTH[] = {0, 1, 2, 4, 6};
+    const int idx = std::min<int>(extraParagraphSpacing, 4);
+    currentPageNextY += lineHeight * EIGHTH[idx] / 8;
   }
 }

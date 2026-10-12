@@ -52,6 +52,8 @@ constexpr StrId WORD_SPACING_IDS[] = {StrId::STR_SPACING_50_PERCENT,  StrId::STR
 constexpr StrId CHARACTER_SPACING_IDS[] = {StrId::STR_SPACING_MINUS_2, StrId::STR_SPACING_MINUS_1,
                                            StrId::STR_SPACING_ZERO, StrId::STR_SPACING_PLUS_1,
                                            StrId::STR_SPACING_PLUS_2};
+constexpr StrId PARA_SPACING_IDS[] = {StrId::STR_NONE_OPT, StrId::STR_TIGHT, StrId::STR_NORMAL, StrId::STR_WIDE,
+                                     StrId::STR_EXTRA_WIDE};
 constexpr StrId ALIGNMENT_IDS[] = {StrId::STR_JUSTIFY, StrId::STR_ALIGN_LEFT, StrId::STR_CENTER, StrId::STR_ALIGN_RIGHT,
                                    StrId::STR_BOOK_S_STYLE};
 constexpr int MARGIN_MIN = CrossPointSettings::SCREEN_MARGIN_MIN;
@@ -381,8 +383,11 @@ void TextSettingsActivity::applySize(int listIndex) {
 void TextSettingsActivity::confirmLayoutRow(int row) {
   switch (static_cast<LayoutRow>(row)) {
     case LayoutRow::ParaSpacing:
-      SETTINGS.extraParagraphSpacing = !SETTINGS.extraParagraphSpacing;
-      SETTINGS.saveToFile();
+      optionPopup_.show(StrId::STR_EXTRA_SPACING, PARA_SPACING_IDS, static_cast<int>(std::size(PARA_SPACING_IDS)),
+                        SETTINGS.extraParagraphSpacing, [](int idx) {
+                          SETTINGS.extraParagraphSpacing = static_cast<uint8_t>(idx);
+                          SETTINGS.saveToFile();
+                        });
       requestUpdate();
       break;
     case LayoutRow::LineSpacing:
@@ -444,8 +449,10 @@ std::string TextSettingsActivity::layoutValueText(int row) const {
       const uint8_t v = SETTINGS.lineSpacing;
       return v < std::size(LINE_SPACING_IDS) ? I18N.get(LINE_SPACING_IDS[v]) : I18N.get(StrId::STR_NORMAL);
     }
-    case LayoutRow::ParaSpacing:
-      return SETTINGS.extraParagraphSpacing ? tr(STR_STATE_ON) : tr(STR_STATE_OFF);
+    case LayoutRow::ParaSpacing: {
+      const uint8_t v = SETTINGS.extraParagraphSpacing;
+      return v < std::size(PARA_SPACING_IDS) ? I18N.get(PARA_SPACING_IDS[v]) : I18N.get(StrId::STR_NORMAL);
+    }
     case LayoutRow::Alignment: {
       const uint8_t v = SETTINGS.paragraphAlignment;
       return v < std::size(ALIGNMENT_IDS) ? I18N.get(ALIGNMENT_IDS[v]) : I18N.get(StrId::STR_JUSTIFY);
